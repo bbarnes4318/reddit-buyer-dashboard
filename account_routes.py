@@ -118,14 +118,13 @@ async def add_reddit_account(
         status_code=303
     )
 
-# Get Reddit account data (for editing)
+# Get Reddit account data
 @router.get("/reddit/{account_id}/data")
 async def get_reddit_account_data(
     account_id: int,
     current_user: models.User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    # Get the account
     account = db.query(models.RedditAccount).filter(
         models.RedditAccount.id == account_id,
         models.RedditAccount.owner_id == current_user.id
@@ -134,12 +133,13 @@ async def get_reddit_account_data(
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
     
-    # Return account data without sensitive fields
+    # Return only non-sensitive data
     return JSONResponse({
         "id": account.id,
         "username": account.username,
-        "client_id": account.client_id,
-        "user_agent": account.user_agent
+        "created_at": account.created_at.isoformat() if account.created_at else None,
+        "last_used": account.last_used.isoformat() if account.last_used else None,
+        "is_active": account.is_active
     })
 
 # Edit Reddit account

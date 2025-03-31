@@ -8,10 +8,12 @@ from datetime import timedelta
 import json
 import httpx
 from starlette.middleware.sessions import SessionMiddleware
+from urllib.parse import urlencode
 
 import models
 from database import get_db
 import auth
+from auth import get_current_active_user
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 templates = Jinja2Templates(directory="templates")
@@ -179,7 +181,8 @@ async def reddit_login(request: Request):
         request, 
         redirect_uri,
         state=request.session["oauth_state"],
-        duration="permanent"
+        duration="permanent",
+        scope="identity read history"
     )
 
 # Reddit OAuth callback
@@ -232,7 +235,38 @@ async def reddit_callback(request: Request, db: Session = Depends(get_db)):
             auth_provider_id=reddit_id
         )
     
-    # Create access token
+    # Create or update a Reddit account for this user
+    existing_account = db.query(models.RedditAccount).filter(
+        models.RedditAccount.owner_id == db_user.id,
+        models.RedditAccount.username == reddit_username
+    ).first()
+    
+    # Current time for token expiration calculation
+    now = datetime.utcnow()
+    expires_at = now + timedelta(seconds=token.get('expires_in', 3600))
+    
+    if existing_account:
+        # Update existing account with new tokens
+        existing_account.access_token = token.get('access_token')
+        existing_account.refresh_token = token.get('refresh_token')
+        existing_account.token_expires_at = expires_at
+        existing_account.last_used = now
+        db.commit()
+    else:
+        # Create new Reddit account
+        new_account = models.RedditAccount(
+            username=reddit_username,
+            access_token=token.get('access_token'),
+            refresh_token=token.get('refresh_token'),
+            token_expires_at=expires_at,
+            owner_id=db_user.id,
+            created_at=now,
+            last_used=now
+        )
+        db.add(new_account)
+        db.commit()
+    
+    # Create access token for our app
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = auth.create_access_token(
         data={"sub": db_user.username}, expires_delta=access_token_expires
@@ -247,6 +281,108 @@ async def reddit_callback(request: Request, db: Session = Depends(get_db)):
     )
     
     return response
+
+# Connect Reddit account (for already logged-in users)
+@router.get("/reddit/connect")
+async def connect_reddit_account(
+    request: Request,
+    current_user: models.User = Depends(get_current_active_user)
+):
+    # Set a unique state for CSRF protection
+    request.session["oauth_state"] = auth.generate_state()
+    redirect_uri = request.url_for("reddit_connect_callback")
+    
+    # Store current user ID in session to identify the user on callback
+    request.session["connecting_user_id"] = current_user.id
+    
+    return await auth.oauth.reddit.authorize_redirect(
+        request, 
+        redirect_uri,
+        state=request.session["oauth_state"],
+        duration="permanent",
+        scope="identity read history"
+    )
+
+# Reddit connect callback (for already logged-in users)
+@router.get("/reddit/connect/callback")
+async def reddit_connect_callback(request: Request, db: Session = Depends(get_db)):
+    # Verify state to prevent CSRF
+    if request.query_params.get("state") != request.session.get("oauth_state"):
+        return RedirectResponse(url="/account?error=Invalid+state+parameter")
+    
+    # Get user ID from session
+    user_id = request.session.get("connecting_user_id")
+    if not user_id:
+        return RedirectResponse(url="/auth/login?error=Session+expired")
+    
+    # Verify user exists
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        return RedirectResponse(url="/auth/login?error=User+not+found")
+    
+    token = await auth.oauth.reddit.authorize_access_token(request)
+    
+    # Get Reddit user info
+    headers = {
+        "Authorization": f"Bearer {token.get('access_token')}",
+        "User-Agent": "RedditBuyerIntentDashboard/1.0"
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.get("https://oauth.reddit.com/api/v1/me", headers=headers)
+        
+    if response.status_code != 200:
+        return RedirectResponse(url="/account?error=Failed+to+get+Reddit+user+info")
+        
+    user_info = response.json()
+    reddit_username = user_info.get("name")
+    
+    # Check if this account already exists for this user
+    existing_account = db.query(models.RedditAccount).filter(
+        models.RedditAccount.owner_id == user_id,
+        models.RedditAccount.username == reddit_username
+    ).first()
+    
+    # Current time for token expiration calculation
+    now = datetime.utcnow()
+    expires_at = now + timedelta(seconds=token.get('expires_in', 3600))
+    
+    if existing_account:
+        # Update existing account with new tokens
+        existing_account.access_token = token.get('access_token')
+        existing_account.refresh_token = token.get('refresh_token')
+        existing_account.token_expires_at = expires_at
+        existing_account.last_used = now
+        db.commit()
+        
+        success_message = f"Reddit account u/{reddit_username} reconnected successfully"
+    else:
+        # Create new Reddit account
+        new_account = models.RedditAccount(
+            username=reddit_username,
+            access_token=token.get('access_token'),
+            refresh_token=token.get('refresh_token'),
+            token_expires_at=expires_at,
+            owner_id=user_id,
+            created_at=now,
+            last_used=now
+        )
+        db.add(new_account)
+        db.commit()
+        
+        success_message = f"Reddit account u/{reddit_username} connected successfully"
+    
+    # Clear session variables
+    if "oauth_state" in request.session:
+        del request.session["oauth_state"]
+    if "connecting_user_id" in request.session:
+        del request.session["connecting_user_id"]
+    
+    # Redirect to account page with success message
+    return RedirectResponse(
+        url=f"/account?success={success_message}",
+        status_code=status.HTTP_302_FOUND
+    )
 
 # Logout
 @router.get("/logout")

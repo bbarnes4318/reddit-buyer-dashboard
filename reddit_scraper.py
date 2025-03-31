@@ -2,6 +2,7 @@ import praw
 import time
 import logging
 from datetime import datetime, timedelta
+import requests
 import config
 
 # Configure logging
@@ -12,32 +13,129 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class RedditScraper:
-    def __init__(self, client_id=None, client_secret=None, username=None, password=None, user_agent=None):
+    def __init__(self, access_token=None, refresh_token=None, token_expires_at=None):
         """
-        Initialize the Reddit scraper with API credentials.
+        Initialize the Reddit scraper with OAuth tokens.
         
         Args:
-            client_id (str, optional): Reddit API client ID. Defaults to config value.
-            client_secret (str, optional): Reddit API client secret. Defaults to config value.
-            username (str, optional): Reddit username. Defaults to config value.
-            password (str, optional): Reddit password. Defaults to config value.
-            user_agent (str, optional): User agent string. Defaults to config value.
+            access_token (str, optional): OAuth access token for Reddit API.
+            refresh_token (str, optional): OAuth refresh token for Reddit API.
+            token_expires_at (datetime, optional): When the access token expires.
         """
+        self.access_token = access_token
+        self.refresh_token = refresh_token
+        self.token_expires_at = token_expires_at
+        self.user_agent = "RedditBuyerIntentBot/1.0"
+        
+        # Use app credentials for OAuth
+        self.client_id = config.REDDIT_OAUTH_CLIENT_ID
+        self.client_secret = config.REDDIT_OAUTH_CLIENT_SECRET
+        
+        # Initialize PRAW with the access token if available
+        if access_token:
+            self._init_with_token(access_token)
+        else:
+            # Fallback to app-only auth for non-authenticated operations
+            self._init_read_only()
+            
+        # Track when users were last messaged to avoid spam
+        self.last_messaged = {}
+    
+    def _init_with_token(self, access_token):
+        """Initialize PRAW with an OAuth access token."""
         try:
             self.reddit = praw.Reddit(
-                client_id=client_id or config.REDDIT_CLIENT_ID,
-                client_secret=client_secret or config.REDDIT_CLIENT_SECRET,
-                username=username or config.REDDIT_USERNAME,
-                password=password or config.REDDIT_PASSWORD,
-                user_agent=user_agent or config.REDDIT_USER_AGENT
+                client_id=self.client_id,
+                client_secret=self.client_secret,
+                user_agent=self.user_agent,
+                token_manager=self._get_token_manager(access_token)
             )
-            logger.info("Reddit API client initialized successfully")
+            logger.info("Reddit API client initialized with OAuth token")
+        except Exception as e:
+            logger.error(f"Failed to initialize Reddit API client with OAuth: {str(e)}")
+            raise
+    
+    def _init_read_only(self):
+        """Initialize PRAW in read-only mode."""
+        try:
+            self.reddit = praw.Reddit(
+                client_id=self.client_id,
+                client_secret=self.client_secret,
+                user_agent=self.user_agent
+            )
+            self.reddit.read_only = True
+            logger.info("Reddit API client initialized in read-only mode")
         except Exception as e:
             logger.error(f"Failed to initialize Reddit API client: {str(e)}")
             raise
-
-        # Track when users were last messaged to avoid spam
-        self.last_messaged = {}
+    
+    def _get_token_manager(self, access_token):
+        """Create a token manager for PRAW to use the access token."""
+        from praw.auth import ImplicitAuth
+        class CustomTokenManager:
+            def __init__(self, access_token):
+                self.access_token = access_token
+            
+            def post_refresh_callback(self, authorizer):
+                pass
+                
+            def pre_refresh_callback(self, authorizer):
+                pass
+                
+            def is_valid(self):
+                return True
+                
+            def refresh(self):
+                pass
+        
+        return CustomTokenManager(access_token)
+    
+    def refresh_token_if_needed(self):
+        """Check if the access token is expired and refresh if needed."""
+        if not self.refresh_token:
+            return False
+            
+        now = datetime.utcnow()
+        if self.token_expires_at and now >= self.token_expires_at:
+            # Token has expired, refresh it
+            try:
+                token_data = self._refresh_access_token()
+                if token_data and 'access_token' in token_data:
+                    self.access_token = token_data['access_token']
+                    expires_in = token_data.get('expires_in', 3600)
+                    self.token_expires_at = now + timedelta(seconds=expires_in)
+                    self._init_with_token(self.access_token)
+                    return True
+            except Exception as e:
+                logger.error(f"Failed to refresh access token: {str(e)}")
+                return False
+        return True
+        
+    def _refresh_access_token(self):
+        """Refresh the OAuth access token using the refresh token."""
+        try:
+            auth = (self.client_id, self.client_secret)
+            headers = {"User-Agent": self.user_agent}
+            data = {
+                "grant_type": "refresh_token",
+                "refresh_token": self.refresh_token
+            }
+            
+            response = requests.post(
+                "https://www.reddit.com/api/v1/access_token",
+                auth=auth,
+                headers=headers,
+                data=data
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logger.error(f"Failed to refresh token. Status: {response.status_code}")
+                return None
+        except Exception as e:
+            logger.error(f"Exception while refreshing token: {str(e)}")
+            return None
     
     def test_connection(self):
         """
@@ -47,9 +145,21 @@ class RedditScraper:
             bool: True if connection successful, False otherwise
         """
         try:
-            # Try to get the authenticated user's identity
-            username = self.reddit.user.me().name
-            logger.info(f"Successfully connected to Reddit as u/{username}")
+            if self.access_token:
+                # If we have a token, check if it's valid and refresh if needed
+                if not self.refresh_token_if_needed():
+                    return False
+                    
+                # Try to get the authenticated user's identity
+                username = self.reddit.user.me().name
+                logger.info(f"Successfully connected to Reddit as u/{username}")
+            else:
+                # Just test basic connectivity
+                subreddit = self.reddit.subreddit("all")
+                for _ in subreddit.new(limit=1):
+                    pass
+                logger.info("Successfully connected to Reddit API")
+                
             return True
         except Exception as e:
             logger.error(f"Failed to connect to Reddit: {str(e)}")
@@ -67,6 +177,11 @@ class RedditScraper:
         Returns:
             list: List of dictionaries containing post data
         """
+        # Ensure token is valid if we have one
+        if self.access_token and not self.refresh_token_if_needed():
+            logger.error("Failed to refresh token, cannot scrape subreddit")
+            return []
+            
         if keywords is None:
             keywords = config.BUYER_INTENT_KEYWORDS
             
@@ -179,6 +294,16 @@ class RedditScraper:
         Returns:
             bool: True if the message was sent, False otherwise
         """
+        # Check if we have valid OAuth credentials with required scopes
+        if not self.access_token:
+            logger.error("Cannot send message: No OAuth access token")
+            return False
+            
+        # Make sure token is valid
+        if not self.refresh_token_if_needed():
+            logger.error("Cannot send message: Failed to refresh token")
+            return False
+            
         if not self.can_message_user(username):
             return False
             

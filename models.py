@@ -25,10 +25,12 @@ class RedditAccount(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, index=True)
-    client_id = Column(String)
-    client_secret = Column(String)
-    password = Column(String)
-    user_agent = Column(String)
+    
+    # OAuth tokens
+    access_token = Column(String)
+    refresh_token = Column(String)
+    token_expires_at = Column(DateTime)
+    
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_used = Column(DateTime, nullable=True)
