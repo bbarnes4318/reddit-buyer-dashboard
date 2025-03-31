@@ -28,8 +28,8 @@ class RedditScraper:
         self.user_agent = "RedditBuyerIntentBot/1.0"
         
         # Use app credentials for OAuth
-        self.client_id = config.REDDIT_OAUTH_CLIENT_ID
-        self.client_secret = config.REDDIT_OAUTH_CLIENT_SECRET
+        self.client_id = config.REDDIT_CLIENT_ID
+        self.client_secret = config.REDDIT_CLIENT_SECRET
         
         # Initialize PRAW with the access token if available
         if access_token:
