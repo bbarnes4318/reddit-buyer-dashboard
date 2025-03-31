@@ -2,6 +2,7 @@ import logging
 import json
 import os
 import glob
+import sys
 from datetime import datetime
 from fastapi import FastAPI, Request, BackgroundTasks, Depends, HTTPException, status
 from fastapi.templating import Jinja2Templates
@@ -32,13 +33,13 @@ import models
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
-# Configure logging
+# Configure logging for cloud environment
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("dashboard.log"),
-        logging.StreamHandler()
+        # Use stdout for App Engine instead of file
+        logging.StreamHandler(sys.stdout)
     ]
 )
 logger = logging.getLogger(__name__)
@@ -61,15 +62,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Create templates directory
-os.makedirs('templates', exist_ok=True)
+# Is this App Engine?
+is_app_engine = os.environ.get('GAE_ENV', '').startswith('standard')
 
-# Create static directory
-os.makedirs('static', exist_ok=True)
-
-# Copy logo to static directory if it exists
-if os.path.exists('logo.png') and not os.path.exists('static/logo.png'):
-    shutil.copy('logo.png', 'static/logo.png')
+# Create templates directory - only if not on App Engine
+if not is_app_engine:
+    os.makedirs('templates', exist_ok=True)
+    # Create static directory
+    os.makedirs('static', exist_ok=True)
+    # Copy logo to static directory if it exists
+    if os.path.exists('logo.png') and not os.path.exists('static/logo.png'):
+        shutil.copy('logo.png', 'static/logo.png')
 
 # Mount static directory
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -131,9 +134,10 @@ async def forbidden_handler(request, exc):
         )
     return RedirectResponse(url=f"/auth/login?error=Please+log+in+to+continue")
 
-# Create the simple HTML template
-with open("templates/index.html", "w") as f:
-    f.write("""
+# Skip template creation in App Engine - templates should be included in the deployment
+if not is_app_engine and not os.path.exists("templates/index.html"):
+    with open("templates/index.html", "w") as f:
+        f.write("""
 <!DOCTYPE html>
 <html lang="en">
 <head>
