@@ -3,6 +3,7 @@ import json
 import os
 import glob
 import sys
+import re
 from datetime import datetime
 from fastapi import FastAPI, Request, BackgroundTasks, Depends, HTTPException, status
 from fastapi.templating import Jinja2Templates
@@ -31,7 +32,11 @@ import account_routes
 import models
 
 # Create database tables
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+    print("Database tables created successfully.")
+except Exception as e:
+    print(f"Error creating database tables: {str(e)}")
 
 # Configure logging for cloud environment
 logging.basicConfig(
@@ -136,8 +141,9 @@ async def forbidden_handler(request, exc):
 
 # Skip template creation in App Engine - templates should be included in the deployment
 if not is_app_engine and not os.path.exists("templates/index.html"):
+    # Note: We're using r""" to make sure no escape sequences are interpreted
     with open("templates/index.html", "w") as f:
-        f.write("""
+        f.write(r"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
