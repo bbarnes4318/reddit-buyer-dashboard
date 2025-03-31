@@ -15,7 +15,7 @@ env_variables:
   REDDIT_USER_AGENT: "RedditBuyerIntentBot/1.0"
   GEMINI_API_KEY: "sm://projects/reddit-buyer-dashboard/secrets/GEMINI_API_KEY/versions/latest"
   SECRET_KEY: "sm://projects/reddit-buyer-dashboard/secrets/SECRET_KEY/versions/latest"
-  DATABASE_URL: "postgresql+psycopg2://postgres:password@/reddit_dashboard?host=/cloudsql/reddit-buyer-dashboard:us-central1:reddit-dashboard-db"
+  DATABASE_URL: "postgresql+psycopg2://postgres:Reddit2024DB!@/reddit_dashboard?host=/cloudsql/reddit-buyer-dashboard:us-central1:reddit-dashboard-db"
   GOOGLE_CLIENT_ID: "sm://projects/reddit-buyer-dashboard/secrets/GOOGLE_CLIENT_ID/versions/latest"
   GOOGLE_CLIENT_SECRET: "sm://projects/reddit-buyer-dashboard/secrets/GOOGLE_CLIENT_SECRET/versions/latest"
   REDDIT_OAUTH_CLIENT_ID: "sm://projects/reddit-buyer-dashboard/secrets/REDDIT_OAUTH_CLIENT_ID/versions/latest"
