@@ -83,7 +83,12 @@ if not is_app_engine:
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Initialize templates
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(
+    directory="templates",
+    autoescape=True,
+    auto_reload=False,
+    charset='utf-8'
+)
 
 # Create app instance
 reddit_app = RedditBuyerIntentApp()
