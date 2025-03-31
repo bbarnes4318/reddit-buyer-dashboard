@@ -87,7 +87,6 @@ templates = Jinja2Templates(
     directory="templates",
     autoescape=True,
     auto_reload=False,
-    charset='utf-8',
     encoding='utf-8'
 )
 
