@@ -128,8 +128,7 @@ async def dashboard(request: Request, current_user: models.User = Depends(get_cu
                 "user": current_user,
                 "reddit_accounts": reddit_accounts,
                 "task_status": task_status
-            },
-            charset='utf-8'
+            }
         )
     except Exception as e:
         logger.error(f"Error rendering dashboard: {str(e)}")
