@@ -87,7 +87,8 @@ templates = Jinja2Templates(
     directory="templates",
     autoescape=True,
     auto_reload=False,
-    charset='utf-8'
+    charset='utf-8',
+    encoding='utf-8'
 )
 
 # Create app instance
@@ -115,19 +116,27 @@ app.include_router(account_routes.router)
 # Main dashboard route
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request, current_user: models.User = Depends(get_current_active_user)):
-    # Get user's Reddit accounts
-    db = next(get_db())
-    reddit_accounts = auth.get_reddit_accounts(db, current_user.id)
-    
-    return templates.TemplateResponse(
-        "index.html", 
-        {
-            "request": request, 
-            "user": current_user,
-            "reddit_accounts": reddit_accounts,
-            "task_status": task_status
-        }
-    )
+    try:
+        # Get user's Reddit accounts
+        db = next(get_db())
+        reddit_accounts = auth.get_reddit_accounts(db, current_user.id)
+        
+        return templates.TemplateResponse(
+            "index.html", 
+            {
+                "request": request, 
+                "user": current_user,
+                "reddit_accounts": reddit_accounts,
+                "task_status": task_status
+            },
+            charset='utf-8'
+        )
+    except Exception as e:
+        logger.error(f"Error rendering dashboard: {str(e)}")
+        return HTMLResponse(
+            content="<h1>Error loading dashboard</h1><p>Please try again later.</p>",
+            status_code=500
+        )
 
 # Redirect root to login if not authenticated
 @app.exception_handler(status.HTTP_401_UNAUTHORIZED)

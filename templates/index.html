@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -255,28 +254,6 @@
             color: white;
             border-color: #3498db;
         }
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #ddd;
-        }
-        .navbar h1 {
-            margin: 0;
-        }
-        .nav-links {
-            margin-right: 10px;
-        }
-        .nav-links a {
-            margin-right: 15px;
-            color: #3498db;
-            text-decoration: none;
-        }
-        .nav-links a:hover {
-            text-decoration: underline;
-        }
         .pagination button:disabled {
             background: #f8f9fa;
             color: #ccc;
@@ -309,15 +286,7 @@
 </head>
 <body>
     <div class="navbar">
-        
-    <div class="navbar">
         <h1>Reddit Buyer Intent Dashboard</h1>
-        <div class="nav-links">
-            <a href="/">Dashboard</a>
-            <a href="/prompt-tester">Prompt Tester</a>
-        </div>
-    </div>
-    
         <div class="nav-links">
             <a href="/">Dashboard</a>
             <a href="/prompt-tester">Prompt Tester</a>
@@ -439,7 +408,7 @@
                 const badge = $('<div class="subreddit-badge"></div>')
                     .text('r/' + subreddit.name);
                 
-                const removeBtn = $('<button class="remove-badge">×</button>')
+                const removeBtn = $('<button class="remove-badge">Ã—</button>')
                     .on('click', function() {
                         removeSubreddit(subreddit.name);
                     });
