@@ -899,10 +899,7 @@ if not is_app_engine and not os.path.exists("templates/index.html"):
 </html>
     """)
 
-@app.get("/", response_class=HTMLResponse)
-async def get_dashboard(request: Request):
-    """Render the dashboard home page."""
-    return templates.TemplateResponse("index.html", {"request": request})
+# Removed duplicate route for "/" to fix conflict
 
 @app.get("/api/default-subreddits")
 async def get_default_subreddits():
@@ -2114,3 +2111,4 @@ def start_dashboard():
 
 if __name__ == "__main__":
     start_dashboard() 
+
