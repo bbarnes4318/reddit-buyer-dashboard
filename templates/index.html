@@ -1,0 +1,785 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reddit Buyer Intent Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            flex: 1;
+            min-width: 300px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .select2-container {
+            width: 100% !important;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .status-running {
+            background: #2ecc71;
+            color: white;
+        }
+        .status-idle {
+            background: #ecf0f1;
+            color: #7f8c8d;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .details-btn {
+            background: #27ae60;
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+        .message-text {
+            white-space: pre-wrap;
+            max-height: 150px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            border: 1px solid #eee;
+            margin-top: 10px;
+        }
+        .intent-high {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .intent-medium {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        .intent-low {
+            color: #3498db;
+        }
+        .refresh-status {
+            margin-left: 10px;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        #refresh-btn {
+            background: #95a5a6;
+            font-size: 14px;
+            padding: 5px 10px;
+        }
+        .subreddit-badge {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            border-radius: 20px;
+            padding: 5px 12px;
+            margin: 5px;
+            font-size: 14px;
+            position: relative;
+        }
+        .subscribers {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-left: 5px;
+        }
+        #keyword-search {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        #keyword-search input {
+            flex-grow: 1;
+        }
+        #keyword-search button {
+            flex-shrink: 0;
+        }
+        #subreddit-results {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+            margin-bottom: 20px;
+        }
+        .subreddit-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px;
+            width: calc(33.333% - 10px);
+            background: #f9f9f9;
+            position: relative;
+        }
+        .subreddit-card h4 {
+            margin-top: 0;
+            margin-bottom: 5px;
+            font-size: 16px;
+            color: #2c3e50;
+        }
+        .subreddit-card p {
+            margin: 5px 0;
+            font-size: 13px;
+            color: #7f8c8d;
+        }
+        .subreddit-card .add-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 3px 8px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        .subreddit-card .add-btn:hover {
+            background: #219955;
+        }
+        .subreddit-card .add-btn.added {
+            background: #95a5a6;
+            cursor: default;
+        }
+        .remove-badge {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            line-height: 1;
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        #monitored-subreddits {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            min-height: 40px;
+            padding: 5px;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+            border: 1px dashed #ccc;
+        }
+        .empty-message {
+            color: #95a5a6;
+            font-style: italic;
+            padding: 10px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 15px;
+            gap: 5px;
+        }
+        .pagination button {
+            background: #f2f2f2;
+            color: #333;
+            border: 1px solid #ddd;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        .pagination button.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .navbar h1 {
+            margin: 0;
+        }
+        .nav-links {
+            margin-right: 10px;
+        }
+        .nav-links a {
+            margin-right: 15px;
+            color: #3498db;
+            text-decoration: none;
+        }
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+        .pagination button:disabled {
+            background: #f8f9fa;
+            color: #ccc;
+            border-color: #eee;
+            cursor: not-allowed;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .navbar h1 {
+            margin: 0;
+        }
+        .nav-links {
+            margin-right: 10px;
+        }
+        .nav-links a {
+            margin-right: 15px;
+            color: #3498db;
+            text-decoration: none;
+        }
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        
+    <div class="navbar">
+        <h1>Reddit Buyer Intent Dashboard</h1>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/prompt-tester">Prompt Tester</a>
+        </div>
+    </div>
+    
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/prompt-tester">Prompt Tester</a>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="section-header">
+            <h2>Monitored Subreddits</h2>
+            <button id="clear-all-btn">Clear All</button>
+        </div>
+        <div id="monitored-subreddits">
+            <div class="empty-message">No subreddits added yet. Use the search below to find and add subreddits.</div>
+        </div>
+        
+        <div class="section-header">
+            <h2>Find Subreddits</h2>
+        </div>
+        <div id="keyword-search">
+            <input type="text" id="keyword-input" placeholder="Enter keyword or subreddit name...">
+            <button id="search-btn">Search</button>
+        </div>
+        <div id="subreddit-results"></div>
+        <div class="pagination" id="pagination"></div>
+    </div>
+    
+    <div class="container">
+        <div class="card">
+            <h2>Run Monitoring</h2>
+            <form id="run-form">
+                <div class="form-group">
+                    <label for="min-intent">Minimum Intent Level:</label>
+                    <select id="min-intent" name="min_intent">
+                        <option value="HIGH">HIGH</option>
+                        <option value="MEDIUM" selected>MEDIUM</option>
+                        <option value="LOW">LOW</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="min-confidence">Minimum Confidence:</label>
+                    <input type="number" id="min-confidence" name="min_confidence" min="0.1" max="1.0" step="0.1" value="0.6">
+                </div>
+                <div class="form-group">
+                    <label for="limit">Posts per Subreddit:</label>
+                    <input type="number" id="limit" name="limit" min="5" max="100" value="25">
+                </div>
+                <div class="form-group">
+                    <label for="send-messages">
+                        <input type="checkbox" id="send-messages" name="send_messages"> Send DMs to Users
+                    </label>
+                </div>
+                <button type="submit" id="run-btn">Run Monitoring Cycle</button>
+            </form>
+        </div>
+        
+        <div class="card">
+            <h2>System Status</h2>
+            <p>Status: <span class="status" id="status-indicator"></span>
+                <button id="refresh-btn">Refresh</button>
+                <span id="refresh-status" class="refresh-status"></span>
+            </p>
+            <div id="current-task-info"></div>
+            <div id="last-run-info"></div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h2>Responses</h2>
+        <div id="responses-container">
+            <p>No responses available yet. Run a monitoring cycle to generate responses.</p>
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Store selected subreddits
+        let selectedSubreddits = [];
+        let currentPage = 0;
+        let currentKeyword = '';
+        let hasMoreResults = false;
+        
+        // Initial load - get default subreddits
+        $(document).ready(function() {
+            loadDefaultSubreddits();
+            updateMonitoredSubreddits();
+            
+            // Add event listeners
+            $('#search-btn').on('click', searchSubreddits);
+            $('#keyword-input').on('keypress', function(e) {
+                if (e.which === 13) {
+                    searchSubreddits();
+                    e.preventDefault();
+                }
+            });
+            $('#clear-all-btn').on('click', clearAllSubreddits);
+        });
+        
+        // Function to load default subreddits from config
+        function loadDefaultSubreddits() {
+            fetch('/api/default-subreddits')
+                .then(response => response.json())
+                .then(data => {
+                    selectedSubreddits = data.map(name => ({ name }));
+                    updateMonitoredSubreddits();
+                });
+        }
+        
+        // Function to update the monitored subreddits display
+        function updateMonitoredSubreddits() {
+            const container = $('#monitored-subreddits');
+            
+            if (selectedSubreddits.length === 0) {
+                container.html('<div class="empty-message">No subreddits added yet. Use the search below to find and add subreddits.</div>');
+                return;
+            }
+            
+            container.empty();
+            selectedSubreddits.forEach(subreddit => {
+                const badge = $('<div class="subreddit-badge"></div>')
+                    .text('r/' + subreddit.name);
+                
+                const removeBtn = $('<button class="remove-badge">×</button>')
+                    .on('click', function() {
+                        removeSubreddit(subreddit.name);
+                    });
+                
+                badge.append(removeBtn);
+                container.append(badge);
+            });
+        }
+        
+        // Function to add a subreddit to the monitored list
+        function addSubreddit(subreddit) {
+            // Check if already added
+            if (!selectedSubreddits.some(s => s.name === subreddit.name)) {
+                selectedSubreddits.push(subreddit);
+                updateMonitoredSubreddits();
+                
+                // Update button state in search results
+                $('.add-btn[data-name="' + subreddit.name + '"]')
+                    .addClass('added')
+                    .text('Added')
+                    .prop('disabled', true);
+            }
+        }
+        
+        // Function to remove a subreddit from the monitored list
+        function removeSubreddit(name) {
+            selectedSubreddits = selectedSubreddits.filter(s => s.name !== name);
+            updateMonitoredSubreddits();
+            
+            // Update button state in search results if visible
+            $('.add-btn[data-name="' + name + '"]')
+                .removeClass('added')
+                .text('Add')
+                .prop('disabled', false);
+        }
+        
+        // Function to clear all monitored subreddits
+        function clearAllSubreddits() {
+            if (confirm('Are you sure you want to clear all monitored subreddits?')) {
+                selectedSubreddits = [];
+                updateMonitoredSubreddits();
+                
+                // Update all buttons in search results
+                $('.add-btn.added')
+                    .removeClass('added')
+                    .text('Add')
+                    .prop('disabled', false);
+            }
+        }
+        
+        // Function to search for subreddits
+        function searchSubreddits(page = 0) {
+            const keyword = $('#keyword-input').val().trim();
+            if (!keyword) return;
+            
+            currentKeyword = keyword;
+            currentPage = page;
+            
+            // Show loading state
+            $('#subreddit-results').html('<p>Searching for subreddits...</p>');
+            $('#pagination').empty();
+            
+            fetch('/api/search-subreddits?query=' + encodeURIComponent(keyword) + '&page=' + page)
+                .then(response => response.json())
+                .then(data => {
+                    displaySearchResults(data);
+                })
+                .catch(error => {
+                    console.error('Error searching for subreddits:', error);
+                    $('#subreddit-results').html('<p>Error searching for subreddits. Please try again.</p>');
+                });
+        }
+        
+        // Function to display search results
+        function displaySearchResults(data) {
+            const resultsContainer = $('#subreddit-results');
+            resultsContainer.empty();
+            
+            // Extract results and pagination info
+            const results = data.results || data;
+            hasMoreResults = data.has_more !== undefined ? data.has_more : false;
+            
+            if (results.length === 0) {
+                resultsContainer.html('<p>No subreddits found for your search term.</p>');
+                return;
+            }
+            
+            // Create a card for each subreddit
+            results.forEach(subreddit => {
+                const card = $('<div class="subreddit-card"></div>');
+                
+                const header = $('<h4></h4>').text('r/' + subreddit.name);
+                
+                const subscribers = $('<p></p>').text(
+                    formatSubscribers(subreddit.subscribers) + ' subscribers'
+                );
+                
+                const description = $('<p></p>').text(
+                    subreddit.description || 'No description available'
+                );
+                
+                const isAlreadyAdded = selectedSubreddits.some(s => s.name === subreddit.name);
+                
+                const addButton = $('<button class="add-btn"></button>')
+                    .text(isAlreadyAdded ? 'Added' : 'Add')
+                    .attr('data-name', subreddit.name)
+                    .toggleClass('added', isAlreadyAdded)
+                    .prop('disabled', isAlreadyAdded)
+                    .on('click', function() {
+                        addSubreddit({
+                            name: subreddit.name,
+                            subscribers: subreddit.subscribers,
+                            description: subreddit.description
+                        });
+                    });
+                
+                card.append(header, subscribers, description, addButton);
+                resultsContainer.append(card);
+            });
+            
+            // Create pagination controls
+            updatePagination();
+        }
+        
+        // Function to update pagination controls
+        function updatePagination() {
+            const paginationContainer = $('#pagination');
+            paginationContainer.empty();
+            
+            // Only show pagination if there are more results
+            if (!hasMoreResults && currentPage === 0) return;
+            
+            // Previous button
+            const prevBtn = $('<button>Previous</button>')
+                .prop('disabled', currentPage === 0)
+                .on('click', function() {
+                    if (currentPage > 0) {
+                        searchSubreddits(currentPage - 1);
+                    }
+                });
+            
+            // Current page indicator
+            const pageIndicator = $('<span></span>').text(' Page ' + (currentPage + 1) + ' ');
+            
+            // Next button
+            const nextBtn = $('<button>Next</button>')
+                .prop('disabled', !hasMoreResults)
+                .on('click', function() {
+                    if (hasMoreResults) {
+                        searchSubreddits(currentPage + 1);
+                    }
+                });
+            
+            paginationContainer.append(prevBtn, pageIndicator, nextBtn);
+        }
+        
+        // Format subscriber count
+        function formatSubscribers(count) {
+            if (!count) return 'Unknown';
+            
+            if (count >= 1000000) {
+                return (count / 1000000).toFixed(1) + 'M';
+            } else if (count >= 1000) {
+                return (count / 1000).toFixed(1) + 'K';
+            }
+            return count;
+        }
+        
+        // Function to update status
+        function updateStatus() {
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {
+                    // Update status indicator
+                    const statusIndicator = document.getElementById('status-indicator');
+                    if (data.is_running) {
+                        statusIndicator.textContent = 'RUNNING';
+                        statusIndicator.className = 'status status-running';
+                    } else {
+                        statusIndicator.textContent = 'IDLE';
+                        statusIndicator.className = 'status status-idle';
+                    }
+                    
+                    // Update current task info
+                    const currentTaskInfo = document.getElementById('current-task-info');
+                    if (data.current_task) {
+                        let subredditsText = 'Default';
+                        if (data.current_task.subreddits && data.current_task.subreddits.length > 0) {
+                            subredditsText = data.current_task.subreddits.map(s => `r/${s}`).join(', ');
+                        }
+                        
+                        currentTaskInfo.innerHTML = `<h3>Current Task</h3>
+                            <p>Subreddits: ${subredditsText}</p>
+                            <p>Min Intent: ${data.current_task.min_intent}</p>
+                            <p>Min Confidence: ${data.current_task.min_confidence}</p>
+                            <p>Sending DMs: ${data.current_task.send_messages ? 'Yes' : 'No'}</p>`;
+                    } else {
+                        currentTaskInfo.innerHTML = '';
+                    }
+                    
+                    // Update last run info
+                    const lastRunInfo = document.getElementById('last-run-info');
+                    if (data.last_run) {
+                        lastRunInfo.innerHTML = `<h3>Last Run</h3>
+                            <p>Time: ${new Date(data.last_run).toLocaleString()}</p>`;
+                        
+                        if (data.results) {
+                            lastRunInfo.innerHTML += `
+                                <p>Posts Scraped: ${data.results.posts_scraped}</p>
+                                <p>High Intent Content: ${data.results.high_intent_content}</p>
+                                <p>Responses Generated: ${data.results.responses_generated}</p>
+                                <p>Messages Sent: ${data.results.messages_sent}</p>
+                                <p>Duration: ${data.results.duration_seconds ? data.results.duration_seconds.toFixed(2) + 's' : 'N/A'}</p>`;
+                        }
+                    } else {
+                        lastRunInfo.innerHTML = '<p>No monitoring runs yet</p>';
+                    }
+                    
+                    document.getElementById('refresh-status').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+                })
+                .catch(error => {
+                    console.error('Error fetching status:', error);
+                    document.getElementById('refresh-status').textContent = 'Error refreshing data';
+                });
+        }
+        
+        // Function to load responses
+        function loadResponses() {
+            fetch('/api/responses')
+                .then(response => response.json())
+                .then(data => {
+                    const responsesContainer = document.getElementById('responses-container');
+                    
+                    if (data.length === 0) {
+                        responsesContainer.innerHTML = '<p>No responses available yet. Run a monitoring cycle to generate responses.</p>';
+                        return;
+                    }
+                    
+                    let html = '<table><thead><tr>' +
+                        '<th>Author</th>' +
+                        '<th>Intent</th>' +
+                        '<th>Subject</th>' +
+                        '<th>Action</th>' +
+                        '</tr></thead><tbody>';
+                    
+                    data.forEach((response, index) => {
+                        const intentClass = response.intent_category === 'HIGH' ? 'intent-high' : 
+                                           response.intent_category === 'MEDIUM' ? 'intent-medium' : 'intent-low';
+                        
+                        html += `<tr>
+                            <td>u/${response.author}</td>
+                            <td class="${intentClass}">${response.intent_category}</td>
+                            <td>${response.subject}</td>
+                            <td>
+                                <button class="details-btn" onclick="showMessageDetails(${index})">View Message</button>
+                            </td>
+                        </tr>
+                        <tr id="message-row-${index}" style="display: none;">
+                            <td colspan="4">
+                                <div class="message-text">${response.message}</div>
+                            </td>
+                        </tr>`;
+                    });
+                    
+                    html += '</tbody></table>';
+                    responsesContainer.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error fetching responses:', error);
+                });
+        }
+        
+        // Function to show message details
+        function showMessageDetails(index) {
+            const messageRow = document.getElementById(`message-row-${index}`);
+            if (messageRow.style.display === 'none') {
+                messageRow.style.display = 'table-row';
+            } else {
+                messageRow.style.display = 'none';
+            }
+        }
+        
+        // Add event listener for form submission
+        document.getElementById('run-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (selectedSubreddits.length === 0) {
+                alert('Please add at least one subreddit to monitor.');
+                return;
+            }
+            
+            const form = e.target;
+            const subreddits = selectedSubreddits.map(s => s.name);
+            const minIntent = form.min_intent.value;
+            const minConfidence = parseFloat(form.min_confidence.value);
+            const limit = parseInt(form.limit.value);
+            const sendMessages = form.send_messages.checked;
+            
+            const data = {
+                subreddits: subreddits,
+                min_intent: minIntent,
+                min_confidence: minConfidence,
+                limit: limit,
+                send_messages: sendMessages
+            };
+            
+            fetch('/api/run', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                alert('Monitoring task started!');
+                updateStatus();
+            })
+            .catch(error => {
+                console.error('Error starting monitoring:', error);
+                alert('Error starting monitoring task');
+            });
+        });
+        
+        // Add event listener for refresh button
+        document.getElementById('refresh-btn').addEventListener('click', function() {
+            updateStatus();
+            loadResponses();
+        });
+        
+        // Initial load
+        updateStatus();
+        loadResponses();
+        
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            updateStatus();
+            loadResponses();
+        }, 30000);
+    </script>
+</body>
+</html>
+    

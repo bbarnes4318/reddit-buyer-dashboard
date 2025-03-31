@@ -1,0 +1,573 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Tester - Reddit Buyer Intent</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+            background: #f2f2f2;
+        }
+        .tab.active {
+            background: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 300px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: monospace;
+            font-size: 14px;
+            margin-bottom: 10px;
+            resize: vertical;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+        .json-viewer {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            height: 300px;
+            overflow-y: auto;
+        }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .nav-links {
+            margin-bottom: 20px;
+        }
+        .nav-links a {
+            margin-right: 15px;
+            color: #3498db;
+            text-decoration: none;
+        }
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+        .loading {
+            display: none;
+            margin-left: 10px;
+            color: #7f8c8d;
+        }
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+            padding: 10px;
+            background: #fadbd8;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .hint {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        .json-key {
+            color: #2980b9;
+        }
+        .json-value {
+            color: #27ae60;
+        }
+        .json-string {
+            color: #c0392b;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .navbar h1 {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>Prompt Tester</h1>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/prompt-tester">Prompt Tester</a>
+        </div>
+    </div>
+    
+    <div class="tabs">
+        <div class="tab active" data-tab="intent-detection">Intent Detection</div>
+        <div class="tab" data-tab="response-generation">Response Generation</div>
+    </div>
+    
+    <div id="intent-detection" class="tab-content active">
+        <div class="container">
+            <div class="card">
+                <h2>Intent Detection Prompt</h2>
+                <div class="controls">
+                    <button id="load-default-intent-prompt">Load Default Prompt</button>
+                    <button id="test-intent-prompt">Test Prompt</button>
+                    <button id="save-intent-prompt" class="save-btn">Save as Default</button>
+                    <span id="intent-loading" class="loading">Testing...</span>
+                </div>
+                <div class="form-group">
+                    <label for="intent-prompt">Prompt Template:</label>
+                    <textarea id="intent-prompt" placeholder="Enter your custom prompt template here..."></textarea>
+                    <div class="hint">Use {content} as a placeholder for the Reddit content. You can also use {subreddit_info}, {title_info}, and other context fields.</div>
+                </div>
+                <div class="form-group">
+                    <label for="intent-content">Test Content:</label>
+                    <textarea id="intent-content" placeholder="Enter a sample Reddit post or comment to analyze..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="intent-context">Context (JSON):</label>
+                    <textarea id="intent-context" placeholder="Enter context as JSON (optional)..."></textarea>
+                    <div class="hint">Example: {"type": "post", "subreddit": "buildapc", "title": "Looking for recommendations"}</div>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Result</h2>
+                <div id="intent-error" class="error" style="display: none;"></div>
+                <h3>Raw Prompt:</h3>
+                <pre id="intent-raw-prompt">Test a prompt to see the result</pre>
+                <h3>Raw Response:</h3>
+                <pre id="intent-raw-response"></pre>
+                <h3>Parsed Result:</h3>
+                <div id="intent-parsed-result" class="json-viewer"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="response-generation" class="tab-content">
+        <div class="container">
+            <div class="card">
+                <h2>Response Generation Prompt</h2>
+                <div class="controls">
+                    <button id="load-default-response-prompt">Load Default Prompt</button>
+                    <button id="test-response-prompt">Test Prompt</button>
+                    <button id="save-response-prompt" class="save-btn">Save as Default</button>
+                    <span id="response-loading" class="loading">Testing...</span>
+                </div>
+                <div class="form-group">
+                    <label for="response-prompt">Prompt Template:</label>
+                    <textarea id="response-prompt" placeholder="Enter your custom prompt template here..."></textarea>
+                    <div class="hint">Use {content}, {intent_category}, {products_services}, {needs}, {timeframe}, and other fields as placeholders.</div>
+                </div>
+                <div class="form-group">
+                    <label for="response-content">Test Content:</label>
+                    <textarea id="response-content" placeholder="Enter a sample Reddit post or comment to respond to..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="response-context">Content Context (JSON):</label>
+                    <textarea id="response-context" placeholder="Enter content context as JSON (optional)..."></textarea>
+                    <div class="hint">Example: {"type": "post", "author": "username", "title": "Post title"}</div>
+                </div>
+                <div class="form-group">
+                    <label for="intent-analysis">Intent Analysis (JSON):</label>
+                    <textarea id="intent-analysis" placeholder="Enter intent analysis as JSON..."></textarea>
+                    <div class="hint">This represents the output from the intent detection step.</div>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Result</h2>
+                <div id="response-error" class="error" style="display: none;"></div>
+                <h3>Raw Prompt:</h3>
+                <pre id="response-raw-prompt">Test a prompt to see the result</pre>
+                <h3>Raw Response:</h3>
+                <pre id="response-raw-response"></pre>
+                <h3>Parsed Result:</h3>
+                <div id="response-parsed-result" class="json-viewer"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Remove active class from all tabs
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                // Add active class to clicked tab
+                this.classList.add('active');
+                
+                // Hide all tab content
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                // Show the corresponding tab content
+                document.getElementById(this.dataset.tab).classList.add('active');
+            });
+        });
+        
+        // Format JSON for display
+        function formatJSON(json) {
+            if (typeof json === 'string') {
+                try {
+                    json = JSON.parse(json);
+                } catch (e) {
+                    return json;
+                }
+            }
+            
+            return JSON.stringify(json, null, 2)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/("(\u[a-zA-Z0-9]{4}|\[^u]|[^\"])*"(\s*:)?|(true|false|null)|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                    let cls = 'json-value';
+                    if (/^"/.test(match)) {
+                        if (/:$/.test(match)) {
+                            cls = 'json-key';
+                        } else {
+                            cls = 'json-string';
+                        }
+                    }
+                    return '<span class="' + cls + '">' + match + '</span>';
+                });
+        }
+        
+        // Load default prompts
+        document.getElementById('load-default-intent-prompt').addEventListener('click', loadDefaultIntentPrompt);
+        document.getElementById('load-default-response-prompt').addEventListener('click', loadDefaultResponsePrompt);
+        
+        function loadDefaultIntentPrompt() {
+            fetch('/api/default-prompts')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('intent-prompt').value = data.intent_detection.prompt_template;
+                    document.getElementById('intent-content').value = data.intent_detection.sample_content;
+                    document.getElementById('intent-context').value = JSON.stringify(data.intent_detection.sample_context, null, 2);
+                })
+                .catch(error => {
+                    console.error('Error loading default prompts:', error);
+                    showError('intent-error', 'Error loading default prompts: ' + error.message);
+                });
+        }
+        
+        function loadDefaultResponsePrompt() {
+            fetch('/api/default-prompts')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('response-prompt').value = data.response_generation.prompt_template;
+                    document.getElementById('response-content').value = data.response_generation.sample_content;
+                    document.getElementById('response-context').value = JSON.stringify(data.response_generation.sample_context, null, 2);
+                    document.getElementById('intent-analysis').value = JSON.stringify(data.response_generation.sample_intent_analysis, null, 2);
+                })
+                .catch(error => {
+                    console.error('Error loading default prompts:', error);
+                    showError('response-error', 'Error loading default prompts: ' + error.message);
+                });
+        }
+        
+        // Test intent detection prompt
+        document.getElementById('test-intent-prompt').addEventListener('click', testIntentPrompt);
+        
+        function testIntentPrompt() {
+            const promptTemplate = document.getElementById('intent-prompt').value;
+            const content = document.getElementById('intent-content').value;
+            let context = {};
+            
+            try {
+                const contextText = document.getElementById('intent-context').value.trim();
+                if (contextText) {
+                    context = JSON.parse(contextText);
+                }
+            } catch (e) {
+                showError('intent-error', 'Invalid JSON in context: ' + e.message);
+                return;
+            }
+            
+            if (!promptTemplate || !content) {
+                showError('intent-error', 'Prompt template and content are required');
+                return;
+            }
+            
+            // Show loading state
+            document.getElementById('intent-loading').style.display = 'inline';
+            document.getElementById('intent-error').style.display = 'none';
+            
+            // Clear previous results
+            document.getElementById('intent-raw-prompt').textContent = 'Loading...';
+            document.getElementById('intent-raw-response').textContent = '';
+            document.getElementById('intent-parsed-result').innerHTML = '';
+            
+            // Send request to API
+            fetch('/api/test-intent-prompt', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    prompt_template: promptTemplate,
+                    content: content,
+                    context: context
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide loading state
+                document.getElementById('intent-loading').style.display = 'none';
+                
+                // Check for error
+                if (data.error) {
+                    showError('intent-error', data.error);
+                    return;
+                }
+                
+                // Display results
+                document.getElementById('intent-raw-prompt').textContent = data.raw_prompt || 'No prompt returned';
+                document.getElementById('intent-raw-response').textContent = data.raw_response || 'No response returned';
+                
+                if (data.parsed_result) {
+                    document.getElementById('intent-parsed-result').innerHTML = formatJSON(data.parsed_result);
+                } else {
+                    document.getElementById('intent-parsed-result').textContent = 'No parsed result available';
+                }
+            })
+            .catch(error => {
+                // Hide loading state
+                document.getElementById('intent-loading').style.display = 'none';
+                console.error('Error testing intent prompt:', error);
+                showError('intent-error', 'Error testing prompt: ' + error.message);
+            });
+        }
+        
+        // Test response generation prompt
+        document.getElementById('test-response-prompt').addEventListener('click', testResponsePrompt);
+        
+        function testResponsePrompt() {
+            const promptTemplate = document.getElementById('response-prompt').value;
+            const content = document.getElementById('response-content').value;
+            let context = {};
+            let intentAnalysis = {};
+            
+            try {
+                const contextText = document.getElementById('response-context').value.trim();
+                if (contextText) {
+                    context = JSON.parse(contextText);
+                }
+            } catch (e) {
+                showError('response-error', 'Invalid JSON in context: ' + e.message);
+                return;
+            }
+            
+            try {
+                const analysisText = document.getElementById('intent-analysis').value.trim();
+                if (analysisText) {
+                    intentAnalysis = JSON.parse(analysisText);
+                }
+            } catch (e) {
+                showError('response-error', 'Invalid JSON in intent analysis: ' + e.message);
+                return;
+            }
+            
+            if (!promptTemplate || !content) {
+                showError('response-error', 'Prompt template and content are required');
+                return;
+            }
+            
+            // Show loading state
+            document.getElementById('response-loading').style.display = 'inline';
+            document.getElementById('response-error').style.display = 'none';
+            
+            // Clear previous results
+            document.getElementById('response-raw-prompt').textContent = 'Loading...';
+            document.getElementById('response-raw-response').textContent = '';
+            document.getElementById('response-parsed-result').innerHTML = '';
+            
+            // Send request to API
+            fetch('/api/test-response-prompt', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    prompt_template: promptTemplate,
+                    content: content,
+                    context: context,
+                    intent_analysis: intentAnalysis
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide loading state
+                document.getElementById('response-loading').style.display = 'none';
+                
+                // Check for error
+                if (data.error) {
+                    showError('response-error', data.error);
+                    return;
+                }
+                
+                // Display results
+                document.getElementById('response-raw-prompt').textContent = data.raw_prompt || 'No prompt returned';
+                document.getElementById('response-raw-response').textContent = data.raw_response || 'No response returned';
+                
+                if (data.parsed_result) {
+                    document.getElementById('response-parsed-result').innerHTML = formatJSON(data.parsed_result);
+                } else {
+                    document.getElementById('response-parsed-result').textContent = 'No parsed result available';
+                }
+            })
+            .catch(error => {
+                // Hide loading state
+                document.getElementById('response-loading').style.display = 'none';
+                console.error('Error testing response prompt:', error);
+                showError('response-error', 'Error testing prompt: ' + error.message);
+            });
+        }
+        
+        // Helper function to show errors
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+        
+        // Load default prompts on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDefaultIntentPrompt();
+            loadDefaultResponsePrompt();
+        });
+        
+        // Add event listeners for saving prompts
+        document.getElementById('save-intent-prompt').addEventListener('click', function() {
+            savePromptAsDefault('intent');
+        });
+        
+        document.getElementById('save-response-prompt').addEventListener('click', function() {
+            savePromptAsDefault('response');
+        });
+        
+        // Function to save a prompt as the new default
+        function savePromptAsDefault(promptType) {
+            let promptTemplate;
+            
+            if (promptType === 'intent') {
+                promptTemplate = document.getElementById('intent-prompt').value;
+                if (!promptTemplate) {
+                    showError('intent-error', 'Please enter a prompt template to save');
+                    return;
+                }
+            } else {
+                promptTemplate = document.getElementById('response-prompt').value;
+                if (!promptTemplate) {
+                    showError('response-error', 'Please enter a prompt template to save');
+                    return;
+                }
+            }
+            
+            // Send request to save the prompt
+            fetch('/api/save-default-prompt', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    prompt_type: promptType,
+                    prompt_template: promptTemplate
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    if (promptType === 'intent') {
+                        showError('intent-error', data.error);
+                    } else {
+                        showError('response-error', data.error);
+                    }
+                    return;
+                }
+                
+                // Show success message
+                alert('Prompt saved as default! It will be used for all future analysis.');
+            })
+            .catch(error => {
+                console.error('Error saving prompt:', error);
+                if (promptType === 'intent') {
+                    showError('intent-error', 'Error saving prompt: ' + error.message);
+                } else {
+                    showError('response-error', 'Error saving prompt: ' + error.message);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+    
