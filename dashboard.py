@@ -2005,55 +2005,59 @@ if not is_app_engine:
     """)
 
 # Add a link to the prompt tester in the main dashboard
-with open("templates/index.html", "r") as f:
-    dashboard_html = f.read()
-
-# Add the link to the navbar
-dashboard_html = dashboard_html.replace(
-    '<h1>Reddit Buyer Intent Dashboard</h1>',
-    '''
-    <div class="navbar">
-        <h1>Reddit Buyer Intent Dashboard</h1>
-        <div class="nav-links">
-            <a href="/">Dashboard</a>
-            <a href="/prompt-tester">Prompt Tester</a>
-        </div>
-    </div>
-    '''
-)
-
-# Add the navbar CSS
-dashboard_html = dashboard_html.replace(
-    '.pagination button:disabled {',
-    '''.navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #ddd;
-        }
-        .navbar h1 {
-            margin: 0;
-        }
-        .nav-links {
-            margin-right: 10px;
-        }
-        .nav-links a {
-            margin-right: 15px;
-            color: #3498db;
-            text-decoration: none;
-        }
-        .nav-links a:hover {
-            text-decoration: underline;
-        }
-        .pagination button:disabled {'''
-)
-
-# Write the updated dashboard HTML
 if not is_app_engine:
-    with open("templates/index.html", "w") as f:
-        f.write(dashboard_html)
+    try:
+        with open("templates/index.html", "r", encoding="utf-8", errors="ignore") as f:
+            dashboard_html = f.read()
+
+        # Add the link to the navbar
+        dashboard_html = dashboard_html.replace(
+            '<h1>Reddit Buyer Intent Dashboard</h1>',
+            '''
+            <div class="navbar">
+                <h1>Reddit Buyer Intent Dashboard</h1>
+                <div class="nav-links">
+                    <a href="/">Dashboard</a>
+                    <a href="/prompt-tester">Prompt Tester</a>
+                </div>
+            </div>
+            '''
+        )
+
+        # Add the navbar CSS
+        dashboard_html = dashboard_html.replace(
+            '.pagination button:disabled {',
+            '''.navbar {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 10px 0;
+                    margin-bottom: 20px;
+                    border-bottom: 1px solid #ddd;
+                }
+                .navbar h1 {
+                    margin: 0;
+                }
+                .nav-links {
+                    margin-right: 10px;
+                }
+                .nav-links a {
+                    margin-right: 15px;
+                    color: #3498db;
+                    text-decoration: none;
+                }
+                .nav-links a:hover {
+                    text-decoration: underline;
+                }
+                .pagination button:disabled {'''
+        )
+
+        # Write the updated dashboard HTML
+        with open("templates/index.html", "w", encoding="utf-8") as f:
+            f.write(dashboard_html)
+    except Exception as e:
+        logger.error(f"Error modifying index.html template: {str(e)}")
+        # Continue even if template modification fails
 
 # Add a new API endpoint for saving prompts
 @app.post("/api/save-default-prompt")
