@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import Depends, HTTPException, status, Request
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
@@ -54,8 +54,37 @@ oauth.register(
     client_kwargs={"scope": "identity read"},
 )
 
-# OAuth2 password bearer for token authentication
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+# Custom bearer token extraction (handles both cookie and header)
+class CookieOrHeaderBearer(HTTPBearer):
+    def __init__(self):
+        super().__init__(auto_error=False)
+
+    async def __call__(self, request: Request) -> Optional[HTTPAuthorizationCredentials]:
+        # First try standard header authentication
+        auth_header = await super().__call__(request)
+        if auth_header is not None:
+            return auth_header
+        
+        # Then try cookie
+        token = request.cookies.get("access_token")
+        if token and token.startswith("Bearer "):
+            return HTTPAuthorizationCredentials(
+                credentials=token.replace("Bearer ", ""), 
+                scheme="Bearer"
+            )
+            
+        # Finally try session
+        token = request.session.get("access_token")
+        if token and token.startswith("Bearer "):
+            return HTTPAuthorizationCredentials(
+                credentials=token.replace("Bearer ", ""), 
+                scheme="Bearer"
+            )
+            
+        return None
+
+# Use our custom bearer token extraction
+oauth2_scheme = CookieOrHeaderBearer()
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
@@ -114,21 +143,17 @@ def authenticate_user(db: Session, username: str, password: str):
     return user
 
 # Token validation
-async def get_current_user(token: str = Depends(oauth2_scheme), request: Request = None, db: Session = Depends(get_db)):
+async def get_current_user(auth: Optional[HTTPAuthorizationCredentials] = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     
-    # If token is not provided via Authorization header, try to get it from session
-    if not token and request:
-        session_token = request.session.get("access_token")
-        if session_token and session_token.startswith("Bearer "):
-            token = session_token.replace("Bearer ", "")
-    
-    if not token:
+    if auth is None:
         raise credentials_exception
+    
+    token = auth.credentials
     
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])

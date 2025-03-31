@@ -53,8 +53,17 @@ async def login(
     response.set_cookie(
         key="access_token", 
         value=f"Bearer {access_token}", 
-        httponly=True
+        httponly=True,
+        secure=True,  # For HTTPS
+        samesite="lax",  # Allow redirects
+        path="/",  # Available across the entire site
+        max_age=86400 * 30  # 30 days
     )
+    
+    # Also store in the session for redundancy
+    request.session["access_token"] = f"Bearer {access_token}"
+    request.session["user_id"] = user.id
+    request.session["username"] = user.username
     
     return response
 
@@ -97,8 +106,17 @@ async def signup(
     response.set_cookie(
         key="access_token", 
         value=f"Bearer {access_token}", 
-        httponly=True
+        httponly=True,
+        secure=True,  # For HTTPS
+        samesite="lax",  # Allow redirects
+        path="/",  # Available across the entire site
+        max_age=86400 * 30  # 30 days
     )
+    
+    # Also store in the session for redundancy
+    request.session["access_token"] = f"Bearer {access_token}"
+    request.session["user_id"] = user.id
+    request.session["username"] = user.username
     
     return response
 
@@ -160,15 +178,10 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         data={"sub": db_user.username}, expires_delta=access_token_expires
     )
     
-    # Set token in session cookie with additional parameters for App Engine
+    # Set token in session cookie
     response = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
     
-    # Get domain from request for proper cookie setting
-    domain = request.headers.get('host', '').split(':')[0]
-    if domain == 'localhost':
-        domain = None  # Don't set domain for localhost
-    
-    # Set the auth cookie with appropriate security settings
+    # Explicitly set a domain-less cookie to work in all environments
     response.set_cookie(
         key="access_token", 
         value=f"Bearer {access_token}", 
@@ -176,8 +189,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         secure=True,  # For HTTPS
         samesite="lax",  # Allow redirects
         path="/",  # Available across the entire site
-        max_age=86400 * 30,  # 30 days
-        domain=domain if domain and '.' in domain else None  # Only set domain if it's a valid domain
+        max_age=86400 * 30  # 30 days
     )
     
     # Also store in the session for redundancy
@@ -185,7 +197,6 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     request.session["user_id"] = db_user.id
     request.session["username"] = db_user.username
     
-    # For debugging
     print(f"Login successful for {db_user.username} - Token set in cookies and session")
     
     return response
@@ -297,8 +308,17 @@ async def reddit_callback(request: Request, db: Session = Depends(get_db)):
     response.set_cookie(
         key="access_token", 
         value=f"Bearer {access_token}", 
-        httponly=True
+        httponly=True,
+        secure=True,  # For HTTPS
+        samesite="lax",  # Allow redirects
+        path="/",  # Available across the entire site
+        max_age=86400 * 30  # 30 days
     )
+    
+    # Also store in the session for redundancy
+    request.session["access_token"] = f"Bearer {access_token}"
+    request.session["user_id"] = db_user.id
+    request.session["username"] = db_user.username
     
     return response
 
