@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
 import secrets
+import logging
 
 import models
 from database import get_db
@@ -15,6 +16,8 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 # Generate a secure state token for CSRF protection
 def generate_state():
@@ -111,12 +114,21 @@ def authenticate_user(db: Session, username: str, password: str):
     return user
 
 # Token validation
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+async def get_current_user(token: str = Depends(oauth2_scheme), request: Request = None, db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
+    # If token is not provided via Authorization header, try to get it from session
+    if not token and request:
+        session_token = request.session.get("access_token")
+        if session_token and session_token.startswith("Bearer "):
+            token = session_token.replace("Bearer ", "")
+    
+    if not token:
+        raise credentials_exception
     
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -125,7 +137,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         if username is None:
             raise credentials_exception
             
-    except JWTError:
+    except JWTError as e:
+        logger.error(f"JWT Error: {str(e)}")
         raise credentials_exception
         
     user = get_user_by_username(db, username)
