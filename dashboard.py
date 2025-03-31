@@ -31,6 +31,9 @@ import auth_routes
 import account_routes
 import models
 
+# Is this App Engine?
+is_app_engine = os.environ.get('GAE_ENV', '').startswith('standard')
+
 # Create database tables
 try:
     Base.metadata.create_all(bind=engine)
@@ -66,9 +69,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Is this App Engine?
-is_app_engine = os.environ.get('GAE_ENV', '').startswith('standard')
 
 # Create templates directory - only if not on App Engine
 if not is_app_engine:
@@ -1426,9 +1426,11 @@ async def get_default_prompts():
         }
     }
 
-# Create the prompt tester HTML template
-with open("templates/prompt_tester.html", "w") as f:
-    f.write("""
+# IMPORTANT: ONLY create template files when NOT in App Engine
+if not is_app_engine:
+    # Create the prompt tester HTML template
+    with open("templates/prompt_tester.html", "w") as f:
+        f.write(r"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2049,8 +2051,9 @@ dashboard_html = dashboard_html.replace(
 )
 
 # Write the updated dashboard HTML
-with open("templates/index.html", "w") as f:
-    f.write(dashboard_html)
+if not is_app_engine:
+    with open("templates/index.html", "w") as f:
+        f.write(dashboard_html)
 
 # Add a new API endpoint for saving prompts
 @app.post("/api/save-default-prompt")
@@ -2071,22 +2074,25 @@ async def save_default_prompt(data: dict):
         if not prompt_type or not prompt_template:
             return {"error": "Missing prompt type or template"}
         
-        # Create prompts directory if it doesn't exist
-        os.makedirs('prompts', exist_ok=True)
+        # Skip file operations in App Engine environment
+        if not is_app_engine:
+            # Create prompts directory if it doesn't exist
+            os.makedirs('prompts', exist_ok=True)
+            
+            # Save the prompt to a JSON file
+            if prompt_type == "intent":
+                with open("prompts/intent_prompt.json", "w") as f:
+                    json.dump({"prompt_template": prompt_template}, f, indent=2)
+            elif prompt_type == "response":
+                with open("prompts/response_prompt.json", "w") as f:
+                    json.dump({"prompt_template": prompt_template}, f, indent=2)
         
-        # Save the prompt to a JSON file
+        # Update in-memory templates
         if prompt_type == "intent":
-            with open("prompts/intent_prompt.json", "w") as f:
-                json.dump({"prompt_template": prompt_template}, f, indent=2)
-                
             # Also update the intent detector if it exists
             if hasattr(reddit_app, "intent_detector"):
                 reddit_app.intent_detector.custom_prompt_template = prompt_template
-                
         elif prompt_type == "response":
-            with open("prompts/response_prompt.json", "w") as f:
-                json.dump({"prompt_template": prompt_template}, f, indent=2)
-                
             # Also update the response generator if it exists
             if hasattr(reddit_app, "response_generator"):
                 reddit_app.response_generator.custom_prompt_template = prompt_template
