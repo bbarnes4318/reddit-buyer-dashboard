@@ -21,7 +21,6 @@ from sqlalchemy.orm import Session
 from reddit_scraper import RedditScraper
 from intent_detector import IntentDetector
 from response_generator import ResponseGenerator
-from app import RedditBuyerIntentApp
 import config
 from models import Base
 from database import engine, get_db
@@ -93,9 +92,6 @@ templates = Jinja2Templates(
     auto_reload=False,
     encoding='utf-8'
 )
-
-# Create app instance
-reddit_app = RedditBuyerIntentApp()
 
 # Background task status
 task_status = {
