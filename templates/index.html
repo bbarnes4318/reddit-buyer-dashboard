@@ -4,216 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reddit Buyer Intent Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 1200px;
-            margin: 0 auto;
+            font-family: Arial, sans-serif;
+            margin: 0;
             padding: 20px;
-            background-color: #f8f9fa;
-        }
-        h1, h2, h3 {
-            color: #2c3e50;
-        }
-        .container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-        .card {
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            margin-bottom: 20px;
-            flex: 1;
-            min-width: 300px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-        }
-        input, select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        .select2-container {
-            width: 100% !important;
-        }
-        button {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background: #2980b9;
-        }
-        .status {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-weight: 600;
-            text-align: center;
-        }
-        .status-running {
-            background: #2ecc71;
-            color: white;
-        }
-        .status-idle {
-            background: #ecf0f1;
-            color: #7f8c8d;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        tr:hover {
             background-color: #f5f5f5;
         }
-        .details-btn {
-            background: #27ae60;
-            padding: 5px 10px;
-            font-size: 14px;
-        }
-        .message-text {
-            white-space: pre-wrap;
-            max-height: 150px;
-            overflow-y: auto;
-            padding: 10px;
-            background: #f9f9f9;
-            border-radius: 4px;
-            border: 1px solid #eee;
-            margin-top: 10px;
-        }
-        .intent-high {
-            color: #e74c3c;
-            font-weight: bold;
-        }
-        .intent-medium {
-            color: #f39c12;
-            font-weight: bold;
-        }
-        .intent-low {
-            color: #3498db;
-        }
-        .refresh-status {
-            margin-left: 10px;
-            font-size: 14px;
-            color: #7f8c8d;
-        }
-        #refresh-btn {
-            background: #95a5a6;
-            font-size: 14px;
-            padding: 5px 10px;
-        }
-        .subreddit-badge {
-            display: inline-block;
-            background: #3498db;
-            color: white;
-            border-radius: 20px;
-            padding: 5px 12px;
-            margin: 5px;
-            font-size: 14px;
-            position: relative;
-        }
-        .subscribers {
-            font-size: 12px;
-            color: #7f8c8d;
-            margin-left: 5px;
-        }
-        #keyword-search {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        #keyword-search input {
-            flex-grow: 1;
-        }
-        #keyword-search button {
-            flex-shrink: 0;
-        }
-        #subreddit-results {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-            margin-bottom: 20px;
-        }
-        .subreddit-card {
-            border: 1px solid #e0e0e0;
+        .card {
+            background: white;
             border-radius: 8px;
-            padding: 10px;
-            width: calc(33.333% - 10px);
-            background: #f9f9f9;
-            position: relative;
-        }
-        .subreddit-card h4 {
-            margin-top: 0;
-            margin-bottom: 5px;
-            font-size: 16px;
-            color: #2c3e50;
-        }
-        .subreddit-card p {
-            margin: 5px 0;
-            font-size: 13px;
-            color: #7f8c8d;
-        }
-        .subreddit-card .add-btn {
-            background: #27ae60;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 3px 8px;
-            font-size: 12px;
-            cursor: pointer;
-            margin-top: 5px;
-        }
-        .subreddit-card .add-btn:hover {
-            background: #219955;
-        }
-        .subreddit-card .add-btn.added {
-            background: #95a5a6;
-            cursor: default;
-        }
-        .remove-badge {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            font-size: 10px;
-            line-height: 1;
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .section-header {
             display: flex;
@@ -221,32 +24,106 @@
             align-items: center;
             margin-bottom: 15px;
         }
-        #monitored-subreddits {
-            display: flex;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-            min-height: 40px;
-            padding: 5px;
-            border-radius: 4px;
-            background-color: #f8f9fa;
-            border: 1px dashed #ccc;
+        .section-header h2 {
+            margin: 0;
+            color: #333;
+        }
+        .subreddit-badge {
+            display: inline-block;
+            background: #e1f0fa;
+            padding: 5px 10px;
+            border-radius: 15px;
+            margin: 5px;
+            position: relative;
+        }
+        .remove-badge {
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 5px;
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .remove-badge:hover {
+            color: #e74c3c;
         }
         .empty-message {
-            color: #95a5a6;
+            color: #666;
             font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+        #keyword-search {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        #keyword-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 8px 15px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+        .add-btn {
+            background: #2ecc71;
+        }
+        .add-btn:hover {
+            background: #27ae60;
+        }
+        .add-btn.added {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        .subreddit-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .subreddit-info {
+            flex: 1;
+        }
+        .subreddit-name {
+            font-weight: bold;
+            color: #333;
+        }
+        .subreddit-stats {
+            color: #666;
+            font-size: 0.9em;
         }
         .pagination {
             display: flex;
             justify-content: center;
-            margin-top: 15px;
             gap: 5px;
+            margin-top: 20px;
         }
         .pagination button {
-            background: #f2f2f2;
-            color: #333;
-            border: 1px solid #ddd;
             padding: 5px 10px;
+            background: white;
+            color: #3498db;
+            border: 1px solid #3498db;
             border-radius: 4px;
         }
         .pagination button.active {
@@ -499,82 +376,56 @@
             // Create a card for each subreddit
             results.forEach(subreddit => {
                 const card = $('<div class="subreddit-card"></div>');
+                const info = $('<div class="subreddit-info"></div>');
                 
-                const header = $('<h4></h4>').text('r/' + subreddit.name);
+                info.append($('<div class="subreddit-name"></div>').text('r/' + subreddit.name));
+                info.append($('<div class="subreddit-stats"></div>').text(
+                    `${subreddit.subscribers.toLocaleString()} subscribers • ${subreddit.active_users.toLocaleString()} active users`
+                ));
                 
-                const subscribers = $('<p></p>').text(
-                    formatSubscribers(subreddit.subscribers) + ' subscribers'
-                );
-                
-                const description = $('<p></p>').text(
-                    subreddit.description || 'No description available'
-                );
-                
-                const isAlreadyAdded = selectedSubreddits.some(s => s.name === subreddit.name);
-                
-                const addButton = $('<button class="add-btn"></button>')
-                    .text(isAlreadyAdded ? 'Added' : 'Add')
-                    .attr('data-name', subreddit.name)
-                    .toggleClass('added', isAlreadyAdded)
-                    .prop('disabled', isAlreadyAdded)
+                const addBtn = $('<button class="add-btn" data-name="' + subreddit.name + '">Add</button>')
                     .on('click', function() {
-                        addSubreddit({
-                            name: subreddit.name,
-                            subscribers: subreddit.subscribers,
-                            description: subreddit.description
-                        });
+                        addSubreddit(subreddit);
                     });
                 
-                card.append(header, subscribers, description, addButton);
+                // Check if already added
+                if (selectedSubreddits.some(s => s.name === subreddit.name)) {
+                    addBtn.addClass('added').text('Added').prop('disabled', true);
+                }
+                
+                card.append(info, addBtn);
                 resultsContainer.append(card);
             });
             
-            // Create pagination controls
+            // Update pagination
             updatePagination();
         }
         
-        // Function to update pagination controls
+        // Function to update pagination
         function updatePagination() {
-            const paginationContainer = $('#pagination');
-            paginationContainer.empty();
+            const pagination = $('#pagination');
+            pagination.empty();
             
-            // Only show pagination if there are more results
-            if (!hasMoreResults && currentPage === 0) return;
-            
-            // Previous button
-            const prevBtn = $('<button>Previous</button>')
-                .prop('disabled', currentPage === 0)
-                .on('click', function() {
-                    if (currentPage > 0) {
-                        searchSubreddits(currentPage - 1);
-                    }
-                });
-            
-            // Current page indicator
-            const pageIndicator = $('<span></span>').text(' Page ' + (currentPage + 1) + ' ');
-            
-            // Next button
-            const nextBtn = $('<button>Next</button>')
-                .prop('disabled', !hasMoreResults)
-                .on('click', function() {
-                    if (hasMoreResults) {
-                        searchSubreddits(currentPage + 1);
-                    }
-                });
-            
-            paginationContainer.append(prevBtn, pageIndicator, nextBtn);
-        }
-        
-        // Format subscriber count
-        function formatSubscribers(count) {
-            if (!count) return 'Unknown';
-            
-            if (count >= 1000000) {
-                return (count / 1000000).toFixed(1) + 'M';
-            } else if (count >= 1000) {
-                return (count / 1000).toFixed(1) + 'K';
+            if (currentPage > 0) {
+                pagination.append(
+                    $('<button></button>')
+                        .text('Previous')
+                        .on('click', () => searchSubreddits(currentPage - 1))
+                );
             }
-            return count;
+            
+            pagination.append(
+                $('<button class="active"></button>')
+                    .text(currentPage + 1)
+            );
+            
+            if (hasMoreResults) {
+                pagination.append(
+                    $('<button></button>')
+                        .text('Next')
+                        .on('click', () => searchSubreddits(currentPage + 1))
+                );
+            }
         }
         
         // Function to update status
@@ -582,172 +433,110 @@
             fetch('/api/status')
                 .then(response => response.json())
                 .then(data => {
-                    // Update status indicator
-                    const statusIndicator = document.getElementById('status-indicator');
-                    if (data.is_running) {
-                        statusIndicator.textContent = 'RUNNING';
-                        statusIndicator.className = 'status status-running';
-                    } else {
-                        statusIndicator.textContent = 'IDLE';
-                        statusIndicator.className = 'status status-idle';
-                    }
+                    const statusIndicator = $('#status-indicator');
+                    statusIndicator.text(data.status);
+                    statusIndicator.removeClass('running completed error');
+                    statusIndicator.addClass(data.status.toLowerCase());
                     
-                    // Update current task info
-                    const currentTaskInfo = document.getElementById('current-task-info');
+                    const currentTaskInfo = $('#current-task-info');
                     if (data.current_task) {
-                        let subredditsText = 'Default';
-                        if (data.current_task.subreddits && data.current_task.subreddits.length > 0) {
-                            subredditsText = data.current_task.subreddits.map(s => `r/${s}`).join(', ');
-                        }
-                        
-                        currentTaskInfo.innerHTML = `<h3>Current Task</h3>
-                            <p>Subreddits: ${subredditsText}</p>
-                            <p>Min Intent: ${data.current_task.min_intent}</p>
-                            <p>Min Confidence: ${data.current_task.min_confidence}</p>
-                            <p>Sending DMs: ${data.current_task.send_messages ? 'Yes' : 'No'}</p>`;
+                        currentTaskInfo.html(`
+                            <p><strong>Current Task:</strong> ${data.current_task}</p>
+                            <p><strong>Progress:</strong> ${data.progress || 'N/A'}</p>
+                        `);
                     } else {
-                        currentTaskInfo.innerHTML = '';
+                        currentTaskInfo.empty();
                     }
                     
-                    // Update last run info
-                    const lastRunInfo = document.getElementById('last-run-info');
+                    const lastRunInfo = $('#last-run-info');
                     if (data.last_run) {
-                        lastRunInfo.innerHTML = `<h3>Last Run</h3>
-                            <p>Time: ${new Date(data.last_run).toLocaleString()}</p>`;
-                        
-                        if (data.results) {
-                            lastRunInfo.innerHTML += `
-                                <p>Posts Scraped: ${data.results.posts_scraped}</p>
-                                <p>High Intent Content: ${data.results.high_intent_content}</p>
-                                <p>Responses Generated: ${data.results.responses_generated}</p>
-                                <p>Messages Sent: ${data.results.messages_sent}</p>
-                                <p>Duration: ${data.results.duration_seconds ? data.results.duration_seconds.toFixed(2) + 's' : 'N/A'}</p>`;
-                        }
+                        lastRunInfo.html(`
+                            <p><strong>Last Run:</strong> ${new Date(data.last_run).toLocaleString()}</p>
+                            <p><strong>Results:</strong> ${data.last_run_results || 'N/A'}</p>
+                        `);
                     } else {
-                        lastRunInfo.innerHTML = '<p>No monitoring runs yet</p>';
+                        lastRunInfo.empty();
                     }
-                    
-                    document.getElementById('refresh-status').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
-                })
-                .catch(error => {
-                    console.error('Error fetching status:', error);
-                    document.getElementById('refresh-status').textContent = 'Error refreshing data';
                 });
         }
         
-        // Function to load responses
-        function loadResponses() {
-            fetch('/api/responses')
-                .then(response => response.json())
-                .then(data => {
-                    const responsesContainer = document.getElementById('responses-container');
-                    
-                    if (data.length === 0) {
-                        responsesContainer.innerHTML = '<p>No responses available yet. Run a monitoring cycle to generate responses.</p>';
-                        return;
-                    }
-                    
-                    let html = '<table><thead><tr>' +
-                        '<th>Author</th>' +
-                        '<th>Intent</th>' +
-                        '<th>Subject</th>' +
-                        '<th>Action</th>' +
-                        '</tr></thead><tbody>';
-                    
-                    data.forEach((response, index) => {
-                        const intentClass = response.intent_category === 'HIGH' ? 'intent-high' : 
-                                           response.intent_category === 'MEDIUM' ? 'intent-medium' : 'intent-low';
-                        
-                        html += `<tr>
-                            <td>u/${response.author}</td>
-                            <td class="${intentClass}">${response.intent_category}</td>
-                            <td>${response.subject}</td>
-                            <td>
-                                <button class="details-btn" onclick="showMessageDetails(${index})">View Message</button>
-                            </td>
-                        </tr>
-                        <tr id="message-row-${index}" style="display: none;">
-                            <td colspan="4">
-                                <div class="message-text">${response.message}</div>
-                            </td>
-                        </tr>`;
-                    });
-                    
-                    html += '</tbody></table>';
-                    responsesContainer.innerHTML = html;
-                })
-                .catch(error => {
-                    console.error('Error fetching responses:', error);
-                });
-        }
+        // Update status on page load and when refresh button is clicked
+        updateStatus();
+        $('#refresh-btn').on('click', function() {
+            const btn = $(this);
+            btn.prop('disabled', true);
+            $('#refresh-status').text('Refreshing...');
+            
+            updateStatus();
+            
+            setTimeout(() => {
+                btn.prop('disabled', false);
+                $('#refresh-status').text('');
+            }, 1000);
+        });
         
-        // Function to show message details
-        function showMessageDetails(index) {
-            const messageRow = document.getElementById(`message-row-${index}`);
-            if (messageRow.style.display === 'none') {
-                messageRow.style.display = 'table-row';
-            } else {
-                messageRow.style.display = 'none';
-            }
-        }
-        
-        // Add event listener for form submission
-        document.getElementById('run-form').addEventListener('submit', function(e) {
+        // Handle form submission
+        $('#run-form').on('submit', function(e) {
             e.preventDefault();
             
-            if (selectedSubreddits.length === 0) {
-                alert('Please add at least one subreddit to monitor.');
-                return;
-            }
-            
-            const form = e.target;
-            const subreddits = selectedSubreddits.map(s => s.name);
-            const minIntent = form.min_intent.value;
-            const minConfidence = parseFloat(form.min_confidence.value);
-            const limit = parseInt(form.limit.value);
-            const sendMessages = form.send_messages.checked;
-            
-            const data = {
-                subreddits: subreddits,
-                min_intent: minIntent,
-                min_confidence: minConfidence,
-                limit: limit,
-                send_messages: sendMessages
+            const formData = {
+                subreddits: selectedSubreddits.map(s => s.name),
+                min_intent: $('#min-intent').val(),
+                min_confidence: parseFloat($('#min-confidence').val()),
+                limit: parseInt($('#limit').val()),
+                send_messages: $('#send-messages').is(':checked')
             };
             
-            fetch('/api/run', {
+            fetch('/api/run-monitoring', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify(formData)
             })
             .then(response => response.json())
-            .then(result => {
-                alert('Monitoring task started!');
-                updateStatus();
+            .then(data => {
+                if (data.success) {
+                    alert('Monitoring cycle started successfully!');
+                    updateStatus();
+                } else {
+                    alert('Error starting monitoring cycle: ' + data.error);
+                }
             })
             .catch(error => {
-                console.error('Error starting monitoring:', error);
-                alert('Error starting monitoring task');
+                console.error('Error:', error);
+                alert('Error starting monitoring cycle. Please try again.');
             });
         });
         
-        // Add event listener for refresh button
-        document.getElementById('refresh-btn').addEventListener('click', function() {
-            updateStatus();
-            loadResponses();
-        });
+        // Function to update responses
+        function updateResponses() {
+            fetch('/api/responses')
+                .then(response => response.json())
+                .then(data => {
+                    const container = $('#responses-container');
+                    
+                    if (data.responses && data.responses.length > 0) {
+                        container.empty();
+                        data.responses.forEach(response => {
+                            container.append(`
+                                <div class="response-card">
+                                    <h3>${response.title}</h3>
+                                    <p class="subreddit">r/${response.subreddit}</p>
+                                    <p class="intent">Intent Level: ${response.intent_level}</p>
+                                    <p class="confidence">Confidence: ${(response.confidence * 100).toFixed(1)}%</p>
+                                    <p class="response">${response.response}</p>
+                                </div>
+                            `);
+                        });
+                    } else {
+                        container.html('<p>No responses available yet. Run a monitoring cycle to generate responses.</p>');
+                    }
+                });
+        }
         
-        // Initial load
-        updateStatus();
-        loadResponses();
-        
-        // Auto-refresh every 30 seconds
-        setInterval(() => {
-            updateStatus();
-            loadResponses();
-        }, 30000);
+        // Update responses periodically
+        setInterval(updateResponses, 30000);
     </script>
 </body>
 </html> 
