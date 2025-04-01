@@ -30,4 +30,14 @@ data/
 !templates/
 !static/
 !config.yaml
-!key.json 
+!key.json
+!app.yaml
+!models.py
+!database.py
+!auth.py
+!auth_routes.py
+!account_routes.py
+!reddit_scraper.py
+!intent_detector.py
+!response_generator.py
+!config.py 
