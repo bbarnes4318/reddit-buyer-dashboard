@@ -114,30 +114,20 @@ app.include_router(account_routes.router)
 
 # Main dashboard route
 @app.get("/", response_class=HTMLResponse)
-async def dashboard(
-    request: Request, 
-    current_user: models.User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
-):
-    try:
-        # Get user's Reddit accounts
-        reddit_accounts = auth.get_reddit_accounts(db, current_user.id)
-        
-        return templates.TemplateResponse(
-            "index.html", 
-            {
-                "request": request, 
-                "user": current_user,
-                "reddit_accounts": reddit_accounts,
-                "task_status": task_status
-            }
-        )
-    except Exception as e:
-        logger.error(f"Error rendering dashboard: {str(e)}")
-        return HTMLResponse(
-            content="<h1>Error loading dashboard</h1><p>Please try again later.</p>",
-            status_code=500
-        )
+async def dashboard(request: Request, current_user: models.User = Depends(get_current_active_user)):
+    # Get user's Reddit accounts
+    db = next(get_db())
+    reddit_accounts = auth.get_reddit_accounts(db, current_user.id)
+    
+    return templates.TemplateResponse(
+        "index.html", 
+        {
+            "request": request, 
+            "user": current_user,
+            "reddit_accounts": reddit_accounts,
+            "task_status": task_status
+        }
+    )
 
 # Redirect root to login if not authenticated
 @app.exception_handler(status.HTTP_401_UNAUTHORIZED)
@@ -913,8 +903,6 @@ if not is_app_engine and not os.path.exists("templates/index.html"):
 </body>
 </html>
     """)
-
-# Removed duplicate route for "/" to fix conflict
 
 @app.get("/api/default-subreddits")
 async def get_default_subreddits():
