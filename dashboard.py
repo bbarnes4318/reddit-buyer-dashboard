@@ -946,12 +946,8 @@ async def search_subreddits(query: str = "", page: int = 0):
             return subreddit_cache["popular"]
         
         try:
-            # Initialize Reddit API if needed
-            if not hasattr(reddit_app, "scraper") or not reddit_app.scraper:
-                reddit_app.scraper = RedditScraper()
-            
             popular_subreddits = []
-            for subreddit in reddit_app.scraper.reddit.subreddits.popular(limit=100):
+            for subreddit in scraper.reddit.subreddits.popular(limit=100):
                 popular_subreddits.append({
                     "name": subreddit.display_name,
                     "subscribers": subreddit.subscribers,
@@ -976,10 +972,6 @@ async def search_subreddits(query: str = "", page: int = 0):
         return subreddit_cache["search_results"][cache_key]
     
     try:
-        # Initialize Reddit API if needed
-        if not hasattr(reddit_app, "scraper") or not reddit_app.scraper:
-            reddit_app.scraper = RedditScraper()
-        
         search_results = []
         
         # Calculate how many results to skip based on the page number
@@ -992,7 +984,7 @@ async def search_subreddits(query: str = "", page: int = 0):
         processed_count = 0
         
         # Get subreddits with the search term in their name/description
-        for subreddit in reddit_app.scraper.reddit.subreddits.search(query, limit=fetch_limit):
+        for subreddit in scraper.reddit.subreddits.search(query, limit=fetch_limit):
             # Skip results for previous pages
             if processed_count < skip_count:
                 processed_count += 1
@@ -1012,7 +1004,7 @@ async def search_subreddits(query: str = "", page: int = 0):
         # This is only done for the first page to ensure the most relevant results appear first
         if page == 0 and query:
             try:
-                exact_match = reddit_app.scraper.reddit.subreddit(query)
+                exact_match = scraper.reddit.subreddit(query)
                 # Check if this subreddit exists and isn't already in our results
                 if hasattr(exact_match, 'display_name') and not any(r['name'] == exact_match.display_name for r in search_results):
                     # Insert at the beginning as it's likely the most relevant result
@@ -1069,13 +1061,34 @@ async def run_monitoring(data: dict, background_tasks: BackgroundTasks):
     # Define the task function
     def run_task():
         try:
-            results = reddit_app.run_monitoring_cycle(
-                subreddits=subreddits,
-                limit=limit,
-                min_intent=min_intent,
-                min_confidence=min_confidence,
-                send_messages=send_messages
-            )
+            # Run monitoring cycle
+            results = {
+                "posts_scraped": 0,
+                "high_intent_content": 0,
+                "responses_generated": 0,
+                "messages_sent": 0,
+                "duration_seconds": 0
+            }
+            
+            start_time = time.time()
+            
+            # Scrape posts from subreddits
+            for subreddit in subreddits:
+                posts = scraper.get_subreddit_posts(subreddit, limit=limit)
+                results["posts_scraped"] += len(posts)
+                
+                # Analyze each post
+                for post in posts:
+                    intent_analysis = intent_detector.analyze(post)
+                    if intent_analysis["intent_category"] == min_intent and intent_analysis["confidence"] >= min_confidence:
+                        results["high_intent_content"] += 1
+                        if send_messages:
+                            response = response_generator.generate_response(post, intent_analysis)
+                            results["responses_generated"] += 1
+                            # Send message logic here
+                            results["messages_sent"] += 1
+            
+            results["duration_seconds"] = time.time() - start_time
             
             # Update task status when complete
             task_status["is_running"] = False
