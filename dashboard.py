@@ -29,6 +29,10 @@ import auth
 import auth_routes
 import account_routes
 import models
+from app import RedditBuyerIntentApp
+
+# Initialize the RedditBuyerIntentApp
+reddit_app = RedditBuyerIntentApp()
 
 # Is this App Engine?
 is_app_engine = os.environ.get('GAE_ENV', '').startswith('standard')
