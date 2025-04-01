@@ -73,13 +73,17 @@ class CookieOrHeaderBearer(HTTPBearer):
                 scheme="Bearer"
             )
             
-        # Finally try session
-        token = request.session.get("access_token")
-        if token and token.startswith("Bearer "):
-            return HTTPAuthorizationCredentials(
-                credentials=token.replace("Bearer ", ""), 
-                scheme="Bearer"
-            )
+        # Finally try session - handle potential AttributeError gracefully
+        try:
+            token = request.session.get("access_token")
+            if token and token.startswith("Bearer "):
+                return HTTPAuthorizationCredentials(
+                    credentials=token.replace("Bearer ", ""), 
+                    scheme="Bearer"
+                )
+        except AttributeError:
+            # Session middleware not properly initialized
+            pass
             
         return None
 

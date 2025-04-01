@@ -55,10 +55,14 @@ logger = logging.getLogger(__name__)
 # Create FastAPI app
 app = FastAPI(title="Reddit Buyer Intent Dashboard")
 
-# Add session middleware
+# Add session middleware with proper configuration
 app.add_middleware(
     SessionMiddleware, 
-    secret_key=os.getenv("SECRET_KEY", "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7")
+    secret_key=os.getenv("SECRET_KEY", "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"),
+    session_cookie="session",
+    max_age=86400 * 30,  # 30 days
+    same_site="lax",
+    https_only=True
 )
 
 # Add CORS middleware
