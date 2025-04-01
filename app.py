@@ -5,20 +5,19 @@ import argparse
 import json
 from datetime import datetime
 import os
-import sys
 
 from reddit_scraper import RedditScraper
 from intent_detector import IntentDetector
 from response_generator import ResponseGenerator
 import config
 
-# Configure logging for cloud environment
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        # Use stdout/stderr for App Engine instead of file
-        logging.StreamHandler(sys.stdout)
+        logging.FileHandler("reddit_buyer_intent.log"),
+        logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
@@ -31,9 +30,8 @@ class RedditBuyerIntentApp:
             self.intent_detector = IntentDetector()
             self.response_generator = ResponseGenerator()
             
-            # Create data directory if it doesn't exist and we're not on App Engine
-            if not os.environ.get('GAE_ENV', '').startswith('standard'):
-                os.makedirs('data', exist_ok=True)
+            # Create data directory if it doesn't exist
+            os.makedirs('data', exist_ok=True)
             
             logger.info("Application initialized successfully")
         except Exception as e:

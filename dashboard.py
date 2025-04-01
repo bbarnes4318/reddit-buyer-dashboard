@@ -2,8 +2,6 @@ import logging
 import json
 import os
 import glob
-import sys
-import re
 from datetime import datetime
 from fastapi import FastAPI, Request, BackgroundTasks, Depends, HTTPException, status
 from fastapi.templating import Jinja2Templates
@@ -21,6 +19,7 @@ from sqlalchemy.orm import Session
 from reddit_scraper import RedditScraper
 from intent_detector import IntentDetector
 from response_generator import ResponseGenerator
+from app import RedditBuyerIntentApp
 import config
 from models import Base
 from database import engine, get_db
@@ -29,28 +28,17 @@ import auth
 import auth_routes
 import account_routes
 import models
-from app import RedditBuyerIntentApp
-
-# Initialize the RedditBuyerIntentApp
-reddit_app = RedditBuyerIntentApp()
-
-# Is this App Engine?
-is_app_engine = os.environ.get('GAE_ENV', '').startswith('standard')
 
 # Create database tables
-try:
-    Base.metadata.create_all(bind=engine)
-    print("Database tables created successfully.")
-except Exception as e:
-    print(f"Error creating database tables: {str(e)}")
+Base.metadata.create_all(bind=engine)
 
-# Configure logging for cloud environment
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        # Use stdout for App Engine instead of file
-        logging.StreamHandler(sys.stdout)
+        logging.FileHandler("dashboard.log"),
+        logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
@@ -58,14 +46,10 @@ logger = logging.getLogger(__name__)
 # Create FastAPI app
 app = FastAPI(title="Reddit Buyer Intent Dashboard")
 
-# Add session middleware with proper configuration
+# Add session middleware
 app.add_middleware(
     SessionMiddleware, 
-    secret_key=os.getenv("SECRET_KEY", "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"),
-    session_cookie="session",
-    max_age=86400 * 30,  # 30 days
-    same_site="lax",
-    https_only=True
+    secret_key=os.getenv("SECRET_KEY", "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7")
 )
 
 # Add CORS middleware
@@ -77,25 +61,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Create templates directory - only if not on App Engine
-if not is_app_engine:
-    os.makedirs('templates', exist_ok=True)
-    # Create static directory
-    os.makedirs('static', exist_ok=True)
-    # Copy logo to static directory if it exists
-    if os.path.exists('logo.png') and not os.path.exists('static/logo.png'):
-        shutil.copy('logo.png', 'static/logo.png')
+# Create templates directory
+os.makedirs('templates', exist_ok=True)
+
+# Create static directory
+os.makedirs('static', exist_ok=True)
+
+# Copy logo to static directory if it exists
+if os.path.exists('logo.png') and not os.path.exists('static/logo.png'):
+    shutil.copy('logo.png', 'static/logo.png')
 
 # Mount static directory
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Initialize templates
-templates = Jinja2Templates(
-    directory="templates",
-    autoescape=True,
-    auto_reload=False,
-    encoding='utf-8'
-)
+templates = Jinja2Templates(directory="templates")
+
+# Create app instance
+reddit_app = RedditBuyerIntentApp()
 
 # Background task status
 task_status = {
