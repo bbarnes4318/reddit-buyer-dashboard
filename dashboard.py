@@ -114,10 +114,13 @@ app.include_router(account_routes.router)
 
 # Main dashboard route
 @app.get("/", response_class=HTMLResponse)
-async def dashboard(request: Request, current_user: models.User = Depends(get_current_active_user)):
+async def dashboard(
+    request: Request, 
+    current_user: models.User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
     try:
         # Get user's Reddit accounts
-        db = next(get_db())
         reddit_accounts = auth.get_reddit_accounts(db, current_user.id)
         
         return templates.TemplateResponse(
